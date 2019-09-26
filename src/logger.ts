@@ -16,17 +16,20 @@ export interface Logger {
 
 export namespace Logger {
 
-    export function init(config : Config): Logger {
+    export function init(config: Config): Logger {
 
+        const transports = new Array();
+        transports.push(new winston.transports.File({
+            filename: config.log_filename,
+        }));
+        if (config.log_to_console) {
+
+            transports.push(new winston.transports.Console());
+        }
         const logger = winston.createLogger({
-            level: 'info',
+            level: config.log_level,
             format: winston.format.json(),
-            transports: [
-                new winston.transports.File({
-                    filename: 'words-counter.log',
-                }),
-                new winston.transports.Console()
-            ]
+            transports: transports
         });
 
         return {

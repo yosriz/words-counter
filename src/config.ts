@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 
 export interface Config {
     port?: number;
@@ -14,6 +14,6 @@ export const config: Config = {
     log_to_console: process.env.LOG_TO_CONSOLE === "false", // true is default
     log_filename: process.env.LOG_FILENAME,
     log_level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL as any : "debug",
-    redis_port: process.env.REDIS_HOST ? parseInt(process.env.REDIS_HOST) : 6379,
-    redis_host: process.env.REDIS_PORT ? process.env.REDIS_PORT : "127.0.0.1",
+    redis_port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+    redis_host: process.env.REDIS_HOST ? process.env.REDIS_HOST : "127.0.0.1",
 };
