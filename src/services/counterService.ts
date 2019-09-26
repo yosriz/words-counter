@@ -65,13 +65,15 @@ export class CounterService {
     }
 
     private fillWordsCountMap(string: string) {
+        // gather all words first in memory
         const wordsCountMap = new Map<string, number>();
         string
-            .replace(/(\r\n|\n|\r)/gm, " ")
-            .replace(/[^a-zA-Z\s']/gm, "")
+            .replace(/(\r\n|\n|\r)/gm, " ") // remove line breaks
+            .replace(/[^a-zA-Z\s']/gm, "") // remove any non-letter chars for getting words without
+            // punctuation. (i.e. "word," -> "word")
             .split(" ")
             .forEach(word => {
-                word = word.toLowerCase();
+                word = word.toLowerCase(); // treat data in lower case, as case is not important here ("WOrd" == "word")
                 const count = wordsCountMap.get(word);
                 wordsCountMap.set(word, count ? count + 1 : 1);
             });
