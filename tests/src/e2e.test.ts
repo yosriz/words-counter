@@ -75,13 +75,13 @@ describe("e2e test", () => {
     test("url", async (done) => {
         await supertest(express)
             .post("/counter")
-            .send(<CounterRequest>{url: "https://raw.githubusercontent.com/yosriz/words-counter/tests/LICENSE"})
+            .send(<CounterRequest>{url: "https://raw.githubusercontent.com/yosriz/words-counter/master/tests/data/testString.text"})
             .expect(202);
 
         setTimeout(async function () {
-            await testStats("MIT", 1);
-            await testStats("two", 0);
-            await testStats("three", 0);
+            await testStats("senior", 1);
+            await testStats("backend", 2);
+            await testStats("developer", 2);
             done();
         }, 2000);
 

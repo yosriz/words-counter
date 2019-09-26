@@ -8,9 +8,6 @@
       "dom",
       "es2017"
     ],
-    "types": [
-      "reflect-metadata"
-    ],
     "moduleResolution": "node",
     "strict": true,
     "inlineSourceMap": true,
