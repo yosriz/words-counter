@@ -1,4 +1,4 @@
-import * as express from 'express';
+import * as express from "express";
 import "express-async-errors"; // handle any unhandled async/await errors in any middleware, so general error
 // handler can catch it
 import { Config } from "./config";
@@ -27,7 +27,7 @@ export class WordsCounterApp {
     private createExpress(): express.Express {
         const app = express();
 
-        app.set('port', this.config.port);
+        app.set("port", this.config.port);
 
         const bodyParser = require("body-parser");
         app.use(bodyParser.json());
@@ -42,7 +42,7 @@ export class WordsCounterApp {
     }
 
     private createRoutes(app: express.Express) {
-        app.post('/counter', this.routes!.counterHandler);
-        app.get('/stats', this.routes!.statsHandler);
+        app.post("/counter", this.routes!.counterHandler);
+        app.get("/stats", this.routes!.statsHandler);
     }
 }

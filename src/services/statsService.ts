@@ -9,7 +9,8 @@ export class StatsService {
         this.logger = logger;
     }
 
-    public async getWordsCount(word: string) {
-        return await this.redis.get(word);
+    public async getWordsCount(word: string): Promise<string> {
+        const count = await this.redis.get(word.toLowerCase());
+        return (count === null || count.length === 0) ? "0" : count;
     }
 }

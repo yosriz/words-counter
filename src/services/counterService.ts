@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { BadRequest } from "../errors";
 import { Logger } from "../logger";
 import { Redis } from "ioredis";
+import * as request from "request";
 
 const accessFileAsync = util.promisify(fs.access);
 const readFileAsync = util.promisify(fs.readFile);
@@ -15,7 +16,7 @@ export class CounterService {
         this.logger = logger;
     }
 
-    async countFilepath(filepath: string) {
+    public async countFilepath(filepath: string) {
         await this.validateFileExistence(filepath);
         await this.countWordsFromFile(filepath);
     }
@@ -29,38 +30,76 @@ export class CounterService {
         }
     }
 
-    private async countWordsFromFile(filepath: string) {
-        // let it run, do not wait for the result
-        new Promise(async resolve => {
-            const buffer: Buffer = await readFileAsync(filepath);
-            const string = buffer.toString("utf8");
-            await this.incrementCountFromString(string);
-            resolve();
+    public countString(rawString: string) {
+        this.runTaskSafely(async () => {
+            await this.countWords(rawString);
         });
     }
 
-    private async incrementCountFromString(string: string) {
-        const pipeline = this.redis.pipeline();
-        string.split(" ")
-            .forEach(word => pipeline.incr(word));
+    private runTaskSafely(f: () => Promise<void>) {
+        // let it run, do not wait for the result
+        // in production code, we might want to convert every count operation to a job and sent it to a some persistent queue system (MQ)
+        // in order to make sure every request get processed, and for scaling purposes.
+        // Multi jobs of counting can be processed in parallel with a different job worker services that can be scaled horizontally according to needs,
+        // independent from this gateway web service
+        new Promise(async () => {
+            try {
+                await f();
+            } catch (e) {
+                this.logger.error("task failed.", {error: e});
+            }
+        });
+    }
+
+    private async countWordsFromFile(filepath: string) {
+        this.runTaskSafely(async () => {
+            const buffer: Buffer = await readFileAsync(filepath);
+            const string = buffer.toString("utf8");
+            await this.countWords(string);
+        });
+    }
+
+    private async countWords(string: string) {
+        const wordsCountMap = this.fillWordsCountMap(string);
+        await this.persistCounts(wordsCountMap);
+    }
+
+    private fillWordsCountMap(string: string) {
+        const wordsCountMap = new Map<string, number>();
+        string
+            .replace(/(\r\n|\n|\r)/gm, " ")
+            .replace(/[^a-zA-Z\s']/gm, "")
+            .split(" ")
+            .forEach(word => {
+                word = word.toLowerCase();
+                const count = wordsCountMap.get(word);
+                wordsCountMap.set(word, count ? count + 1 : 1);
+            });
+        return wordsCountMap;
+    }
+
+    private async persistCounts(wordsCountMap: Map<string, number>) {
         try {
             // use pipeline to cache in memory and flush all commands to redis at once.
+            const pipeline = this.redis.pipeline();
+            for (const entry of wordsCountMap.entries()) {
+                pipeline.set(entry[0], entry[1]);
+            }
             await pipeline.exec();
         } catch (e) {
             this.logger.error("pipeline failed ", {error: e});
         }
-
     }
 
-    countString(rawString: string) {
-        // let it run, do not wait for the result
-        new Promise(async resolve => {
-            await this.incrementCountFromString(rawString);
-            resolve();
-        });
+    public countUrl(url: string) {
+        request.get(url)
+            .on("data", async buffer => {
+                const string = buffer.toString("utf8");
+                await this.countWords(string);
+            })
+            .on("error", e => {
+                this.logger.error("streaming url failed", {error: e});
+            });
     }
 
-    countUrl(url: string) {
-
-    }
 }

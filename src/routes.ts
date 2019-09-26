@@ -13,6 +13,8 @@ export class Routes {
     }
 
     public readonly counterHandler: express.RequestHandler = async (req: Request, res: Response) => {
+        // that's the place for input validations like correct request body name, input type etc.
+        // I've skipped validation here and assumed input is correct.
         const counterReq = req.body as CounterRequest;
         if (counterReq.filepath) {
             await this.counterService.countFilepath(counterReq.filepath);
