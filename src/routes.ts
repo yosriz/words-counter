@@ -23,6 +23,7 @@ export class Routes {
         } else if (counterReq.url) {
             this.counterService.countUrl(counterReq.url);
         }
+        this.logger.debug("counterHandler returning response");
         res.status(202).send("OK");
     };
 

@@ -38,10 +38,8 @@ export class CounterService {
 
     private runTaskSafely(f: () => Promise<void>) {
         // let it run, do not wait for the result
-        // in production code, we might want to convert every count operation to a job and sent it to a some persistent queue system (MQ)
-        // in order to make sure every request get processed, and for scaling purposes.
-        // Multi jobs of counting can be processed in parallel with a different job worker services that can be scaled horizontally according to needs,
-        // independent from this gateway web service
+        // in production code, we might want to convert every count operation to a job and sent it to a some persistent queue system (MQ) in order to make sure every request get processed, and for scaling purposes.
+        // Multi jobs of counting can be processed in parallel with a different job worker services that can be scaled horizontally according to needs, independent from this gateway web service
         new Promise(async () => {
             try {
                 await f();
@@ -53,6 +51,11 @@ export class CounterService {
 
     private async countWordsFromFile(filepath: string) {
         this.runTaskSafely(async () => {
+            // ideally would use streaming (like in url reading) to handle large file
+            // I assumed small file here for simplicity
+            // Also, files IO in node is based on internal libuv thread pool (default to 4 IIRC)
+            // thus, handling multiple concurrent files based query can choke the server thread pool
+            // (can be mitigate by increasing node threads, or spinning off several threads/process workers)
             const buffer: Buffer = await readFileAsync(filepath);
             const string = buffer.toString("utf8");
             await this.countWords(string);
@@ -94,8 +97,11 @@ export class CounterService {
     }
 
     public countUrl(url: string) {
+        // use request library to stream from remote file, for handling large files
+        // ideally, we would check url existence before and return error immediately
         request.get(url)
             .on("data", async buffer => {
+                this.logger.debug("processing chunk...");
                 const string = buffer.toString("utf8");
                 await this.countWords(string);
             })

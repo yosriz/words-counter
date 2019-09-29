@@ -67,12 +67,22 @@ describe("e2e test", () => {
             await testStats("senior", 1);
             await testStats("backend", 2);
             await testStats("developer", 2);
+            await testStats("offer", 0);
             done();
-        }, 2000);
+        }, 2000); // not ideal, recipe for flaky tests, it's better to rely on some
+        // different event for making sure processing text is done (which we don't have here)
 
     });
 
-    test("url", async (done) => {
+    test("file not exists - expect error", async () => {
+        const testFile = path.join(__dirname, "../notExistingFile.text");
+        await supertest(express)
+            .post("/counter")
+            .send(<CounterRequest>{filepath: testFile})
+            .expect(400);
+    });
+
+    test("url - expect success", async (done) => {
         await supertest(express)
             .post("/counter")
             .send(<CounterRequest>{url: "https://raw.githubusercontent.com/yosriz/words-counter/master/tests/data/testString.text"})
@@ -82,10 +92,23 @@ describe("e2e test", () => {
             await testStats("senior", 1);
             await testStats("backend", 2);
             await testStats("developer", 2);
+            await testStats("offer", 0);
             done();
         }, 2000);
 
     });
+
+   /* test("url big file - expect success", async (done) => {
+        await supertest(express)
+            .post("/counter")
+            .send(<CounterRequest>{url: "https://norvig.com/big.txt"})
+            .expect(202);
+
+        setTimeout(async function () {
+            done();
+        }, 20000);
+
+    },22000);*/
 
 });
 
